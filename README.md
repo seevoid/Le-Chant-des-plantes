@@ -31,6 +31,12 @@ Then put one electrode at the top of the plant and one at the root. The software
     ```terminal
     python app.py
 
+# Video demo
+
+
+https://user-images.githubusercontent.com/17503183/216373792-a10d7d40-6f0f-46ee-9731-4a3b946c56d2.mp4
+
+
 # License 
 
 MIT
