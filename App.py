@@ -1,20 +1,10 @@
 from threading import Thread
-from threading import Event
+from sys import exit
+import time
+from bisect import bisect_left
 
 from gpiozero import MCP3008
-
-import Adafruit_GPIO.SPI as SPI
-import Adafruit_MCP3008
-
-from signal import signal, SIGINT
-from sys import exit
-
-import random
-
-import time
 import fluidsynth
-
-from bisect import bisect_left
 
 VOLUME_ACCORDS = 30
 
@@ -112,7 +102,6 @@ class Accords_player(Thread):
 class Plant(Thread):
 	def __init__(self, channel_number, bank_name, synth_name, max_volt, min_volt, max_note, min_note, gamme_active, volume):
 		Thread.__init__(self)
-		print("YEAH")
 		self.stop = False
 		self.last_mesure = 0
 		self.pot = MCP3008(channel_number)
@@ -121,8 +110,6 @@ class Plant(Thread):
 		self.min_volt = min_volt
 		self.max_note = max_note
 		self.min_note = min_note
-		print("CAPTE self.max_volt : ", self.max_volt )
-		print("CAPTE self.min_volt : ", self.min_volt )
 		self.coeff = (self.max_note - self.min_note) / (self.max_volt - self.min_volt)
 		self.gamme_active = gamme_active
 		self.volume = volume
@@ -137,7 +124,6 @@ class Plant(Thread):
 		self.round_nb = 0
 
 	def get_voltage(self):
-		# random.seed(random.randrange(1, 6000))
 		mesure = NULL_VALUE_VOLT
 
 		good_mesure = False
@@ -154,13 +140,8 @@ class Plant(Thread):
 				if (mesure > self.list_previous_mesure[0] - 1) and (mesure < self.list_previous_mesure[0] + 1) :
 					 good_mesure = True
 				self.list_previous_mesure[self.round_nb%1] = mesure
-			# print("list_previous_mesure : ", self.list_previous_mesure)
 			self.round_nb += 1
 			time.sleep(0.04)
-
-		# time.sleep(random.randrange(1,100)/100)
-
-		print("mesure: ", mesure)
 
 		if mesure < self.min_volt:
 			mesure = self.min_volt
@@ -173,14 +154,10 @@ class Plant(Thread):
 
 
 	def run(self):
-		# note_to_play = int((self.volt - self.min_volt)*self.coeff + self.min_note)
-		# self.fs.noteon(0, note_to_play, self.volume)
 		while (not self.stop):
 			good_note = False
 			while (not good_note):
 				self.volt = self.get_voltage()
-				# note_to_play = int(48 + int((self.volt - 48)/(0.33)))
-				# self.fs.noteoff(0, note_to_play)
 				try:
 					self.fs.noteoff(0, note_to_play)
 				except:
@@ -189,12 +166,10 @@ class Plant(Thread):
 				if (self.gamme_active):
 					if (note_to_play%12 in CHOOSEN_GAMME):
 						good_note = True
-						# print("note_to_play : ", note_to_play)
 						self.fs.noteon(0, note_to_play, self.volume)
 					else:
 						buf = int(note_to_play/12)
 						note_to_play = take_closest(CHOOSEN_GAMME, note_to_play%12) + (buf*12)
-						# print("note_to_play : ", note_to_play)
 						self.fs.noteon(0, note_to_play, self.volume)
 				else:
 					self.fs.noteon(0, note_to_play, self.volume)
@@ -211,7 +186,6 @@ class Timer_calibrage(Thread):
 	def run(self):
 		time.sleep(self.seconds)
 		self.finish = True
-		print("TIMER DONE")
 		time.sleep(5)
 
 
@@ -223,11 +197,8 @@ def calibrage(timer, channel_number):
 	while timer.finish == False:
 		val = MCP3008(channel_number).value
 		values.append(val)
-		# print("value timer : ", timer.finish)
 		time.sleep(0.1)
 
-	print("HEY1")
-	# print("values : ", values)
 	mini = int(min(values) * 1000) - 15
 	maxi = int(max(values) * 1000) + 15
 
@@ -237,8 +208,6 @@ def calibrage(timer, channel_number):
 
 
 if __name__ == "__main__":
-	# execute only if run as a script
-
 	timer = Timer_calibrage(20)
 	
 
@@ -249,12 +218,8 @@ if __name__ == "__main__":
 	# plant_2 = Plant(2, "sf2_bank_2", "exotic_harp.sf2", 10, 1, 60, 48, True, 127)
 	# plant_2.start()
 
-	
 	mini_volt, maxi_volt = calibrage(timer, 0)
 
-	print("mini volt : ", mini_volt)
-	print("maxi_volt : ", maxi_volt)
-	# plant_2 = Plant(0, "sf2_bank_2", "141-compleet_bank__synth.sf2", 20, 0, 108, 48, True, 80)
 	plant_2 = Plant(0, "sf2_bank_2", "132-pinkullo2.sf2", maxi_volt, mini_volt,96, 36, True, 95)
 
 	plant_2.start()
